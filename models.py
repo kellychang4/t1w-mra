@@ -1,112 +1,115 @@
 import tensorflow as tf
 
-def unet2D(
-    batch_size,
-    input_shape,
-    n_base_filters = 16, 
-    name = "unet2D"
-):
-    
-    # Model Arguments
-    conv_kwargs = {
-        "kernel_size": (3, 3),
-        "padding": "same", 
-        "data_format": "channels_last"
-    }
-    
-    conv_trans_kwargs = {
-        "kernel_size": (2, 2), 
-        "strides": 2,
-        "padding": "same"
-    }
-    
-    # Define Model Input Shapes
-    inputs = tf.keras.Input(shape = input_shape, batch_size = batch_size)
+def UNet(batch_size, input_shape, n_base_filters = 16, name = "UNet"):
+  """
+  U-Net Model Architecture
 
-    # Encoder_1: Layer 1
-    x = tf.keras.layers.Conv2D(n_base_filters, **conv_kwargs)(inputs)
-    x = tf.keras.layers.BatchNormalization()(x)
-    x = tf.keras.layers.Activation("relu")(x)
-    
-    x = tf.keras.layers.Conv2D(n_base_filters * 2, **conv_kwargs)(x)
-    x = tf.keras.layers.BatchNormalization()(x)
-    skip_1 = x = tf.keras.layers.Activation("relu")(x)
-    x = tf.keras.layers.MaxPool2D(2)(x)
+  See: https://arxiv.org/abs/1606.06650
+  """
+  
+  # Encoder convolutional keyword arguments
+  conv_kwargs = {
+    "kernel_size": (3, 3),
+    "padding": "same", 
+    "data_format": "channels_last"
+  }
+  
+  # Decoder convolutional transpose keyword arguments
+  conv_trans_kwargs = {
+    "kernel_size": (2, 2), 
+    "strides": 2,
+    "padding": "same"
+  }
+  
+  # Define Model Input Shapes
+  inputs = tf.keras.Input(shape = input_shape, batch_size = batch_size)
 
-    # Encoder_2: Layer 2
-    x = tf.keras.layers.Conv2D(n_base_filters * 2, **conv_kwargs)(x)
-    x = tf.keras.layers.BatchNormalization()(x)
-    x = tf.keras.layers.Activation("relu")(x)
-    x = tf.keras.layers.Conv2D(n_base_filters * 4, **conv_kwargs)(x)
-    x = tf.keras.layers.BatchNormalization()(x)
-    skip_2 = x = tf.keras.layers.Activation("relu")(x)
-    x = tf.keras.layers.MaxPool2D(2)(x)
+  # Encoder_1: Layer 1
+  x = tf.keras.layers.Conv2D(n_base_filters, **conv_kwargs)(inputs)
+  x = tf.keras.layers.BatchNormalization()(x)
+  x = tf.keras.layers.Activation("relu")(x)
+  
+  x = tf.keras.layers.Conv2D(n_base_filters * 2, **conv_kwargs)(x)
+  x = tf.keras.layers.BatchNormalization()(x)
+  skip_1 = x = tf.keras.layers.Activation("relu")(x)
+  x = tf.keras.layers.MaxPool2D(2)(x)
 
-    # Encoder_3: Layer 3
-    x = tf.keras.layers.Conv2D(n_base_filters * 4, **conv_kwargs)(x)
-    x = tf.keras.layers.BatchNormalization()(x)
-    x = tf.keras.layers.Activation("relu")(x)
-    x = tf.keras.layers.Conv2D(n_base_filters * 8, **conv_kwargs)(x)
-    x = tf.keras.layers.BatchNormalization()(x)
-    skip_3 = x = tf.keras.layers.Activation("relu")(x)
-    x = tf.keras.layers.MaxPool2D(2)(x)
+  # Encoder_2: Layer 2
+  x = tf.keras.layers.Conv2D(n_base_filters * 2, **conv_kwargs)(x)
+  x = tf.keras.layers.BatchNormalization()(x)
+  x = tf.keras.layers.Activation("relu")(x)
+  x = tf.keras.layers.Conv2D(n_base_filters * 4, **conv_kwargs)(x)
+  x = tf.keras.layers.BatchNormalization()(x)
+  skip_2 = x = tf.keras.layers.Activation("relu")(x)
+  x = tf.keras.layers.MaxPool2D(2)(x)
 
-    # Encoder_4: Layer 4
-    x = tf.keras.layers.Conv2D(n_base_filters * 8, **conv_kwargs)(x)
-    x = tf.keras.layers.BatchNormalization()(x)
-    x = tf.keras.layers.Activation("relu")(x)
-    x = tf.keras.layers.Conv2D(n_base_filters * 16, **conv_kwargs)(x)
-    x = tf.keras.layers.BatchNormalization()(x)
-    x = tf.keras.layers.Activation("relu")(x)
+  # Encoder_3: Layer 3
+  x = tf.keras.layers.Conv2D(n_base_filters * 4, **conv_kwargs)(x)
+  x = tf.keras.layers.BatchNormalization()(x)
+  x = tf.keras.layers.Activation("relu")(x)
+  x = tf.keras.layers.Conv2D(n_base_filters * 8, **conv_kwargs)(x)
+  x = tf.keras.layers.BatchNormalization()(x)
+  skip_3 = x = tf.keras.layers.Activation("relu")(x)
+  x = tf.keras.layers.MaxPool2D(2)(x)
 
-    # Decoder_1: Layer 3
-    x = tf.keras.layers.Conv2DTranspose(n_base_filters * 16, **conv_trans_kwargs)(x)
-    x = tf.keras.layers.Concatenate(axis = -1)([skip_3, x])
-    
-    x = tf.keras.layers.Conv2D(n_base_filters * 8, **conv_kwargs)(x)
-    x = tf.keras.layers.BatchNormalization()(x)
-    x = tf.keras.layers.Activation("relu")(x)
-    x = tf.keras.layers.Conv2D(n_base_filters * 8, **conv_kwargs)(x)
-    x = tf.keras.layers.BatchNormalization()(x)
-    x = tf.keras.layers.Activation("relu")(x)
+  # Encoder_4: Layer 4
+  x = tf.keras.layers.Conv2D(n_base_filters * 8, **conv_kwargs)(x)
+  x = tf.keras.layers.BatchNormalization()(x)
+  x = tf.keras.layers.Activation("relu")(x)
+  x = tf.keras.layers.Conv2D(n_base_filters * 16, **conv_kwargs)(x)
+  x = tf.keras.layers.BatchNormalization()(x)
+  x = tf.keras.layers.Activation("relu")(x)
 
-    # Decoder_2: Layer 2
-    x = tf.keras.layers.Conv2DTranspose(n_base_filters * 8, **conv_trans_kwargs)(x)
-    x = tf.keras.layers.Concatenate(axis = -1)([skip_2, x])
-    
-    x = tf.keras.layers.Conv2D(n_base_filters * 4, **conv_kwargs)(x)
-    x = tf.keras.layers.BatchNormalization()(x)
-    x = tf.keras.layers.Activation("relu")(x)
-    x = tf.keras.layers.Conv2D(n_base_filters * 4, **conv_kwargs)(x)
-    x = tf.keras.layers.BatchNormalization()(x)
-    x = tf.keras.layers.Activation("relu")(x)
+  # Decoder_1: Layer 3
+  x = tf.keras.layers.Conv2DTranspose(n_base_filters * 16, **conv_trans_kwargs)(x)
+  x = tf.keras.layers.Concatenate(axis = -1)([skip_3, x])
+  
+  x = tf.keras.layers.Conv2D(n_base_filters * 8, **conv_kwargs)(x)
+  x = tf.keras.layers.BatchNormalization()(x)
+  x = tf.keras.layers.Activation("relu")(x)
+  x = tf.keras.layers.Conv2D(n_base_filters * 8, **conv_kwargs)(x)
+  x = tf.keras.layers.BatchNormalization()(x)
+  x = tf.keras.layers.Activation("relu")(x)
 
-    # Decoder_3: Layer 1
-    x = tf.keras.layers.Conv2DTranspose(n_base_filters * 4, **conv_trans_kwargs)(x)
-    x = tf.keras.layers.Concatenate(axis = -1)([skip_1, x])
-    
-    x = tf.keras.layers.Conv2D(n_base_filters * 2, **conv_kwargs)(x)
-    x = tf.keras.layers.BatchNormalization()(x)
-    x = tf.keras.layers.Activation("relu")(x)
-    x = tf.keras.layers.Conv2D(n_base_filters * 2, **conv_kwargs)(x)
-    x = tf.keras.layers.BatchNormalization()(x)
-    x = tf.keras.layers.Activation("relu")(x)
+  # Decoder_2: Layer 2
+  x = tf.keras.layers.Conv2DTranspose(n_base_filters * 8, **conv_trans_kwargs)(x)
+  x = tf.keras.layers.Concatenate(axis = -1)([skip_2, x])
+  
+  x = tf.keras.layers.Conv2D(n_base_filters * 4, **conv_kwargs)(x)
+  x = tf.keras.layers.BatchNormalization()(x)
+  x = tf.keras.layers.Activation("relu")(x)
+  x = tf.keras.layers.Conv2D(n_base_filters * 4, **conv_kwargs)(x)
+  x = tf.keras.layers.BatchNormalization()(x)
+  x = tf.keras.layers.Activation("relu")(x)
 
-    # Model Output Layer (reduce to same as input channels)
-    outputs = tf.keras.layers.Conv2D(1, kernel_size = (1, 1))(x)
-    
-    # Define the Full Model
-    model = tf.keras.Model(inputs = inputs, outputs = outputs, name = name)
+  # Decoder_3: Layer 1
+  x = tf.keras.layers.Conv2DTranspose(n_base_filters * 4, **conv_trans_kwargs)(x)
+  x = tf.keras.layers.Concatenate(axis = -1)([skip_1, x])
+  
+  x = tf.keras.layers.Conv2D(n_base_filters * 2, **conv_kwargs)(x)
+  x = tf.keras.layers.BatchNormalization()(x)
+  x = tf.keras.layers.Activation("relu")(x)
+  x = tf.keras.layers.Conv2D(n_base_filters * 2, **conv_kwargs)(x)
+  x = tf.keras.layers.BatchNormalization()(x)
+  x = tf.keras.layers.Activation("relu")(x)
 
-    return model
+  # Model Output Layer (reduce to same as input channels)
+  outputs = tf.keras.layers.Conv2D(1, kernel_size = (1, 1))(x)
+  
+  # Define the Full Model
+  model = tf.keras.Model(inputs = inputs, outputs = outputs, name = name)
+
+  return model
 
 
-def RUNet(
-  batch_size, 
-  input_shape, 
-  name = "RUNet"
-): 
+def RUNet(batch_size, input_shape, name = "RUNet"): 
+  """
+  Residual U-Net Model Architecture
 
+  See: https://ieeexplore.ieee.org/document/9025499
+  """
+  
+  # Convolutional keyword arguments
   conv_kwargs = {
     "padding": "same", 
     "data_format": "channels_last"
