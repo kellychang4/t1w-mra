@@ -4,6 +4,8 @@ import tensorflow as tf
 
 
 def _tf_device_configuration(tpu_specs):
+    """Configure TensorFlow to use TPUs or GPUs."""
+    # Set environment variables for TPU/GPU performance
     os.environ["TF_GPU_THREAD_MODE"] = "gpu_private"
     try: # detect TPUs
         tf.keras.mixed_precision.set_global_policy("mixed_bfloat16")
@@ -22,7 +24,8 @@ def _tf_device_configuration(tpu_specs):
     return strategy.scope()
 
 
-def _define_gcs_paths(gcs_bucket, job_name, dataset_name):    
+def _define_gcs_paths(gcs_bucket, job_name, dataset_name):   
+    """Define Google Cloud Storage paths for job artifacts."""
     # Define Google Cloud Storage Paths
     gcs_job   = f"gs://{gcs_bucket}/jobs/{job_name}"
     dirs_dict = {
@@ -36,6 +39,8 @@ def _define_gcs_paths(gcs_bucket, job_name, dataset_name):
 
 
 def _define_callbacks(dirs_dict):
+    """Define callbacks for training a model."""
+
     # Enable visualizations for TensorBoard
     tensorboard = tf.keras.callbacks.TensorBoard(
         log_dir = dirs_dict["tb"] # log file directory
@@ -71,5 +76,6 @@ def _define_callbacks(dirs_dict):
         verbose  = 1           # update message
     )
     
+    # Return callbacks in order of execution priority
     return [tensorboard, model_ckpt, csv_logger, early_stop, reduce_lr]
     
