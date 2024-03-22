@@ -50,7 +50,7 @@ def _write_tfrecord(example_list, shard_file_pattern,
 
 
 def create_tfrecord_dataset(
-  train_csv, test_csv, valid_csv = None, 
+  train_csv, test_csv, valid_csv, 
   output_dir = os.getcwd(),        
   examples_per_shard = 128, 
   compression_type = "GZIP"):
@@ -59,12 +59,10 @@ def create_tfrecord_dataset(
   # create local output directory (if does not exists)
   os.makedirs(output_dir, exist_ok = True)
 
-  # initialize split dictionary, train and test are required
-  split_dict = {
-    "train": _process_split_csv(train_csv), 
-    "test":  _process_split_csv(test_csv)
-  } 
-  if valid_csv: split_dict["valid"] = _process_split_csv(valid_csv)
+  # create split dictionary from csv files
+  split_dict = {"train": train_csv, "test": test_csv, "valid": valid_csv}
+  for split_name, csv in split_dict.items():
+    split_dict[split_name] = _process_split_csv(csv)
       
   # write split tfrecords by shards
   for split_name, example_list in split_dict.items():
@@ -83,14 +81,14 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument("--train_csv", type = str, required = True)
   parser.add_argument("--test_csv", type = str, required = True)
-  parser.add_argument("--valid_csv", type = str, default = None)
+  parser.add_argument("--valid_csv", type = str, required = True)
   parser.add_argument("--output_dir", type = str, default = os.getcwd())
   parser.add_argument("--examples_per_shard", type = int, default = 128)
   parser.add_argument("--compression_type", type = str, default = "GZIP")
   args = parser.parse_args()
           
   # print argument information
-  print("Starting TFRecord Creation...")
+  print("\nStarting TFRecord Creation...")
   print(f"  -> Training CSV: {args.train_csv}")
   print(f"  -> Validation CSV: {args.valid_csv}")
   print(f"  -> Test CSV: {args.test_csv}")
