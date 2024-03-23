@@ -4,6 +4,12 @@ TPU_ZONE="us-central1-b"
 TPU_NAME="tpu-1"
 LOCAL_SCRIPTS="/path/to/scripts"
 
+# create a tpu-vm instance
+gcloud compute tpus tpu-vm create "${TPU_NAME}" \
+  --zone "${TPU_ZONE}" \
+  --accelerator-type "v2-8" \
+  --version "tpu-vm-tf-2.11.0"       
+  
 # starts the tpu-vm instance
 gcloud compute tpus tpu-vm start "${TPU_NAME}" \
   --zone "${TPU_ZONE}" --project "${PROJECT_ID}"
