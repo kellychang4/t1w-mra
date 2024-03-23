@@ -2,17 +2,18 @@ import argparse
 import os.path as op
 import tensorflow as tf
 
+from losses import * 
+from models import * 
+
 from utils import _define_gcs_paths
 from utils import _define_callbacks
 from utils import _tf_device_configuration
-
-from losses import PerceptualLossVGG16, SSIMLoss
-from models import UNet as IMAGE_TRANSFER_MODEL
 
 
 def _read_tfrecord(file_pattern, batch_size, image_shape, n_epochs = None, 
                    cache = False, shuffle = False, shuffle_buffer_size = None, 
                    compression_type = "GZIP", num_parallel_calls = -1):
+  """Read TFRecord Files and Prepare Image/Label Dataset."""
     
   if shuffle and not shuffle_buffer_size:
     raise Exception("If shuffling, must provide a numeric shuffle_buffer_size.")
@@ -71,6 +72,8 @@ def _read_tfrecord(file_pattern, batch_size, image_shape, n_epochs = None,
 
 def _read_and_preprocess_dataset(tfrec_dir, batch_size, image_shape, 
                                  n_images, n_epochs, num_parallel_calls):
+  """Read and Preprocess Dataset."""
+
   # Begin Dataset Loading Process
   dataset = dict(); steps_per_epoch = dict() # initialize
   for ds in ["train", "valid"]: # for each dataset type
@@ -90,9 +93,29 @@ def _read_and_preprocess_dataset(tfrec_dir, batch_size, image_shape,
     steps_per_epoch[ds] = n_images[ds] // batch_size
   return dataset, steps_per_epoch
 
+
+def _get_image_model(image_model):
+  """Get Image Model Architecture."""
+  if image_model.lower() == "unet":
+    return UNet
+  elif image_model.lower() == "runet":
+    return RUNet
+  else:
+    raise Exception(f"Image model {image_model} not recognized.")
+
+
+def _get_loss_function(loss_function):
+  if loss_function.lower() == "perceptuallossvgg16":
+    return PerceptualLossVGG16
+  elif loss_function.lower() == "perceptuallossvgg19":
+    return PerceptualLossVGG19
+  else:
+    raise Exception(f"Loss function {loss_function} not recognized.")
+  
     
-def main(gcs_bucket, job_name, dataset_name, batch_size, image_shape, 
-         n_train_images, n_valid_images, n_epochs, tpu_specs):   
+def main(image_model, loss_function, loss_layer, gcs_bucket, job_name, 
+         dataset_name, batch_size, image_shape, n_train_images, n_valid_images, 
+         n_epochs, tpu_specs):   
     
   # Configure TensorFlow Optimization Seetings by Device Type
   scope = _tf_device_configuration(tpu_specs)
@@ -110,20 +133,24 @@ def main(gcs_bucket, job_name, dataset_name, batch_size, image_shape,
     num_parallel_calls = -1 # shortcut for tf.data.AUTOTUNE
   )
 
+  # Prepare Image Model and Loss Function
+  image_model   = _get_image_model(image_model) # get model
+  loss_function = _get_loss_function(loss_function) # get loss function
+
   # Compile Model within Training Strategy
   with scope: 
     # Define Optimizer with Initial Learning Rate
     optimizer = tf.keras.optimizers.Adam(learning_rate = 1e-4)
 
     # Instantiate Model Architecture
-    model = IMAGE_TRANSFER_MODEL(
+    model = image_model(
       batch_size  = batch_size, 
       input_shape = [*image_shape, 3] # rgb  
     )
 
     # Define Loss Function
-    loss = PerceptualLossVGG16(
-      loss_layer  = "block2_conv2", 
+    loss = loss_function(
+      loss_layer  = loss_layer, 
       input_shape = [*image_shape, 3]
     )
 
@@ -155,6 +182,9 @@ def main(gcs_bucket, job_name, dataset_name, batch_size, image_shape,
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
+  parser.add_argument("--image_model", type = str)
+  parser.add_argument("--loss_function", type = str)
+  parser.add_argument("--loss_layer", type = str)
   parser.add_argument("--gcs_bucket", type = str)
   parser.add_argument("--dataset_name", type = str)
   parser.add_argument("--job_name", type = str)
@@ -172,6 +202,9 @@ if __name__ == "__main__":
   
   argument_information = f"""
   Starting Model Training:
+    -> Image Model: {args.image_model}
+    -> Loss Function: {args.loss_function}
+    -> Loss Layer: {args.loss_layer}
     -> Google Cloud Storage Bucket: {args.gcs_bucket}
     -> Dataset Name: {args.dataset_name}
     -> Job Name: {args.job_name}
@@ -185,6 +218,9 @@ if __name__ == "__main__":
   print(argument_information)
 
   main(
+    image_model     = args.image_model,
+    loss_function   = args.loss_function,
+    loss_layer      = args.loss_layer,
     gcs_bucket      = args.gcs_bucket, 
     dataset_name    = args.dataset_name,
     job_name        = args.job_name, 
