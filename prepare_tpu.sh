@@ -14,6 +14,10 @@ gcloud compute tpus tpu-vm create "${TPU_NAME}" \
 gcloud compute tpus tpu-vm start "${TPU_NAME}" \
   --zone "${TPU_ZONE}" --project "${PROJECT_ID}"
 
+# stops the tpu-vm instance
+gcloud compute tpus tpu-vm start "${TPU_NAME}" \
+  --zone "${TPU_ZONE}" --project "${PROJECT_ID}"
+
 # ssh into the tpu-vm instance
 gcloud compute tpus tpu-vm ssh "${TPU_NAME}" \
   --zone "${TPU_ZONE}" --project "${PROJECT_ID}"
