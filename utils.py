@@ -24,16 +24,16 @@ def _tf_device_configuration(tpu_specs):
   return strategy.scope()
 
 
-def _define_gcs_paths(gcs_bucket, job_name, dataset_name):   
+def _define_paths(dataset_root, job_name, dataset_name):   
   """Define Google Cloud Storage paths for job artifacts."""
   # Define Google Cloud Storage Paths
-  gcs_job   = f"gs://{gcs_bucket}/jobs/{job_name}"
+  root_jobname   = f"{dataset_root}/jobs/{job_name}"
   dirs_dict = {
-    "data": f"gs://{gcs_bucket}/tfrec/{dataset_name}",        
-    "tb":   op.join(gcs_job, "logs"), 
-    "ckpt": op.join(gcs_job, "checkpoints"), 
-    "csv":  op.join(gcs_job, f"{job_name}.csv"),
-    "save": op.join(gcs_job, "model")
+    "data": f"{dataset_root}/tfrec/",        
+    "tb":   op.join(root_jobname, "logs"), 
+    "ckpt": op.join(root_jobname, "checkpoints"), 
+    "csv":  op.join(root_jobname, f"{job_name}.csv"),
+    "save": op.join(root_jobname, "model")
   }
   return dirs_dict 
 
