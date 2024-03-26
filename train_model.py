@@ -5,7 +5,7 @@ import tensorflow as tf
 from losses import * 
 from models import * 
 
-from utils import _define_gcs_paths, _define_paths
+from utils import _define_paths
 from utils import _define_callbacks
 from utils import _tf_device_configuration
 
