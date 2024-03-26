@@ -5,7 +5,7 @@ import tensorflow as tf
 from losses import * 
 from models import * 
 
-from utils import _define_gcs_paths
+from utils import _define_gcs_paths, _define_paths
 from utils import _define_callbacks
 from utils import _tf_device_configuration
 
@@ -113,15 +113,15 @@ def _get_loss_function(loss_function):
     raise Exception(f"Loss function {loss_function} not recognized.")
   
     
-def main(image_model, loss_function, loss_layer, gcs_bucket, job_name, 
+def main(image_model, loss_function, loss_layer, dataset_root, job_name, 
          dataset_name, batch_size, image_shape, n_train_images, n_valid_images, 
          n_epochs, tpu_specs):   
     
   # Configure TensorFlow Optimization Seetings by Device Type
   scope = _tf_device_configuration(tpu_specs)
   
-  # Define Local and GCS Directories from GCS
-  dirs_dict = _define_gcs_paths(gcs_bucket, job_name, dataset_name)
+  # Define Local or GCS Directories:
+  dirs_dict = _define_paths(dataset_root, job_name, dataset_name)
   
   # Read and Preprocess Training, Validation, and Testing Datasets
   dataset, steps_per_epoch = _read_and_preprocess_dataset(
@@ -185,7 +185,7 @@ if __name__ == "__main__":
   parser.add_argument("--image_model", type = str)
   parser.add_argument("--loss_function", type = str)
   parser.add_argument("--loss_layer", type = str)
-  parser.add_argument("--gcs_bucket", type = str)
+  parser.add_argument("--dataset_root", type = str)
   parser.add_argument("--dataset_name", type = str)
   parser.add_argument("--job_name", type = str)
   parser.add_argument("--batch_size", type = int)
@@ -205,7 +205,7 @@ if __name__ == "__main__":
     -> Image Model: {args.image_model}
     -> Loss Function: {args.loss_function}
     -> Loss Layer: {args.loss_layer}
-    -> Google Cloud Storage Bucket: {args.gcs_bucket}
+    -> Google Cloud Storage Bucket: {args.dataset_root}
     -> Dataset Name: {args.dataset_name}
     -> Job Name: {args.job_name}
     -> Batch Size: {args.batch_size}
@@ -221,7 +221,7 @@ if __name__ == "__main__":
     image_model     = args.image_model,
     loss_function   = args.loss_function,
     loss_layer      = args.loss_layer,
-    gcs_bucket      = args.gcs_bucket, 
+    gcs_bucket      = args.dataset_root, 
     dataset_name    = args.dataset_name,
     job_name        = args.job_name, 
     batch_size      = args.batch_size, 
